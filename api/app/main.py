@@ -30,9 +30,9 @@ def read_hash(hash: str, q: Union[str, None] = None):
     pyhibp.set_user_agent(USER_AGENT)
     resp = pw.suffix_search(prefix)
     for res in resp:
-      cnt = int(res.split(":")[1])
-      con.setex(prefix + ":" + suffix, KEY_TIMEOUT, cnt)
-      if res.startswith(suffix):
+      suf,cnt = res.split(":")
+      con.setex(prefix + ":" + suf, KEY_TIMEOUT, cnt)
+      if suf == suffix:
         count = cnt
   
   return {"hash": hash, "count": count}
