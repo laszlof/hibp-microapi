@@ -1,0 +1,21 @@
+---
+version: "3.8"
+
+services:
+  data:
+    image: redis:7
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    container_name: data
+    volumes:
+      - cache:/data
+  api:
+    build: api
+    restart: always
+    ports:
+      - '80:80'
+volumes:
+  cache:
+    driver: local
