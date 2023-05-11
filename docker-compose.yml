@@ -2,24 +2,21 @@
 version: "3.8"
 
 services:
-  data:
-    image: redis:7
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning
-    container_name: data
-    volumes:
-      - cache:/data
-  api:
-    build: api
+  cache:
+    image: varnish:7.3-alpine
     restart: always
     environment:
-      - REDIS_HOST=data
-      - REDIS_PORT=6379
-      - REDIS_KEY_TIMEOUT=604800
+      - VARNISH_SIZE=10240M
+    depends_on:
+      - api
     ports:
       - '80:80'
-volumes:
-  cache:
-    driver: local
+    container_name: cache
+    volumes:
+      - ./files/default.vcl:/etc/varnish/default.vcl
+  api:
+    hostname: api
+    build: api
+    restart: always
+    ports:
+      - 8080
