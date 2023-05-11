@@ -1,41 +1,46 @@
 import string
 import json
-from typing import Union
+import os
+
 from fastapi import FastAPI, HTTPException
 import pyhibp
 from pyhibp import pwnedpasswords as pw
 import redis
 
 USER_AGENT = "hibp-microapi/0.0.1"
-KEY_TIMEOUT = 604800 # 1 week
+
+REDIS_HOST = os.getenv('REDIS_HOST')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+REDIS_KEY_TIMEOUT = os.getenv('REDIS_KEY_TIMEOUT', 604800) # 1 week
+
+if REDIS_HOST is None:
+  raise Exception("REDIS_HOST must be defined.")
 
 app = FastAPI()
-con = redis.Redis(host='data', port=6379, decode_responses=True)
+con = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
-@app.post("/check/{hash}")
-def read_hash(hash: str, q: Union[str, None] = None):
-  hash = hash.upper()
-  if not is_hex(hash):
-    raise HTTPException(status_code=422, detail="Invalid SHA1 hash")
-  if len(hash) != 40:
-    raise HTTPException(status_code=422, detail="Hash must be 40 characters long")
+@app.post("/check/{hash_prefix}")
+def read_hash_prefix(hash_prefix: str):
+  hash_prefix = hash_prefix.upper()
+  if not is_hex(hash_prefix):
+    raise HTTPException(status_code=422, detail="Invalid SHA1 hash prefix")
+  if len(hash_prefix) != 5:
+    raise HTTPException(status_code=422, detail="Hash prefix must be 5 characters long")
 
-  prefix = hash[0:5]
-  suffix = hash[5:40]
-
-  count = 0
-  if len(con.keys(prefix + ":*")) > 0:
-    count = con.get(prefix + ":" + suffix)
-  else:
-    pyhibp.set_user_agent(USER_AGENT)
-    resp = pw.suffix_search(prefix)
-    for res in resp:
-      suf,cnt = res.split(":")
-      con.setex(prefix + ":" + suf, KEY_TIMEOUT, cnt)
-      if suf == suffix:
-        count = cnt
+  res = con.get(hash_prefix)
+  if res != None:
+    return json.loads(res)
   
-  return {"hash": hash, "count": count}
+  pyhibp.set_user_agent(USER_AGENT)
+  obj = []
+  for res in pw.suffix_search(hash_prefix):
+    suffix,count = res.split(":")
+    obj.append({"hash": hash_prefix + suffix, "count": int(count)})
+
+  json_out = json.dumps(obj)
+  con.setex(hash_prefix, REDIS_KEY_TIMEOUT, json_out)
+
+  return obj
 
 def is_hex(s):
   hex_digits = set(string.hexdigits)
