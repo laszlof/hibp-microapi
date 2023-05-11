@@ -20,19 +20,12 @@ def make_request(prefix):
     resp = request.urlopen(req)
     return resp.read()
 
+def generate_prefixes():
+    i = 0
+    while i < 16**5:
+        yield f"{i:05X}"
+        i += 1
+
 if __name__ == '__main__':
-    prefixes = []
-    for v in range(0x0, 0xF + 1):
-        for w in range(0x0, 0xF + 1):
-            for x in range(0x0, 0xF + 1):
-                for y in range(0x0, 0xF + 1):
-                    for z in range(0x0, 0xF + 1):
-                        prefixes.append(
-                            format(v, 'X') +
-                            format(w, 'X') +
-                            format(x, 'X') +
-                            format(y, 'X') +
-                            format(z, 'X')
-                        )
     process_pool = Pool(threads)
-    run_operations(make_request, prefixes, process_pool)
+    run_operations(make_request, list(generate_prefixes()), process_pool)

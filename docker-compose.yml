@@ -17,6 +17,8 @@ services:
   api:
     hostname: api
     build: api
+    extra_hosts:
+      - "api.pwnedpasswords.com:104.17.172.102"
     restart: always
     ports:
       - 8080
