@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import json
+import time
 from multiprocessing import Pool
 import pyhibp
 from pyhibp import pwnedpasswords as pw
@@ -14,13 +15,21 @@ def run_operations(operation, input, pool):
     pool.map(operation, input)
 
 def make_request(prefix):
+    print(prefix + "...", end="")
     pyhibp.set_user_agent(USER_AGENT)
     obj = []
     for res in pw.suffix_search(prefix):
         suffix,count = res.split(":")
         obj.append({"hash": prefix + suffix, "count": int(count)})
-    with open(OUTPUT_DIR + "/" + prefix, 'w') as f:
-        json.dump(obj, f, indent=2)
+    output = {
+      "meta": {
+        "updated": int(time.time())
+      },
+      "hashes": obj
+    }
+    with open(OUTPUT_DIR + "/" + prefix, "w") as f:
+        json.dump(output, f, indent=2)
+    print("Done.")
 
 def generate_prefixes():
     i = 0

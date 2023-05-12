@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-from urllib import request
+from urllib.request import urlopen
 from multiprocessing import Pool
 
 if len(sys.argv) != 2:
@@ -16,9 +16,8 @@ def run_operations(operation, input, pool):
 
 def make_request(prefix):
     url = url_base + prefix
-    req = request.Request(url)
-    resp = request.urlopen(req)
-    return resp.read()
+    with urlopen(url) as resp:
+      return resp.read()
 
 def generate_prefixes():
     i = 0

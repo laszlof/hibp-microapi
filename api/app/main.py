@@ -9,7 +9,7 @@ USER_AGENT = "hibp-microapi/0.0.1"
 
 app = FastAPI()
 
-@app.post("/check/{hash_prefix}")
+@app.get("/check/{hash_prefix}")
 def read_hash_prefix(hash_prefix: str):
   hash_prefix = hash_prefix.upper()
   if not is_hex(hash_prefix):
